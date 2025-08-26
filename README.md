@@ -43,3 +43,7 @@ make uninstall
 ```
 
 to remove the executable from your system.
+
+# Dependencies
+
+- OpenMP

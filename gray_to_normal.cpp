@@ -139,6 +139,7 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
+#pragma omp parallel for
     for (const auto& file_name : files) {
         s32 width, height, channels;
         u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);

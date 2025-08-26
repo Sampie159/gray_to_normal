@@ -7,7 +7,7 @@ stb_image.h:
 stb_image_write.h:
 	wget https://raw.githubusercontent.com/nothings/stb/refs/heads/master/stb_image_write.h
 
-install: all
+install:
 	sudo cp ./gtn /usr/local/bin/
 
 uninstall:

@@ -5,8 +5,16 @@ A grayscale to normal map converter.
 Simply run
 
 ```bash
-gtn <file_name> [OPTIONAL: <strength>(default: 20)]
+gtn <file_name> ... [-s <strength> (default: 20)] [-d <output_dir> (default: ./)]
 ```
+
+You can also run
+
+```bash
+gtn -h
+```
+
+for a help menu.
 
 # Building
 

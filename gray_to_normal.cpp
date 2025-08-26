@@ -2,6 +2,9 @@
 #include <print>
 #include <cstdint>
 #include <string>
+#include <unistd.h>
+#include <vector>
+#include <filesystem>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -84,27 +87,73 @@ static u8* generate_normal_map(const u8* heightmap, s32 width, s32 height, f32 s
     return data;
 }
 
+static constexpr const char* help_string = R"(gtn - (G)rayscale (T)o (N)ormal Map.
+
+Usage: gtn <file_name> ... [-s <strength> (default: 20)] [-d <output_dir> (default: ./)]
+
+Options:
+        -s                  Sets the strength|scale.
+        -d                  Sets the output directory.
+        -h                  Displays this help menu.
+)";
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::println("Please input a filename");
         exit(EXIT_FAILURE);
     }
 
-    std::string file_name = argv[1];
-    f32 scale = argv[2] ? std::stof(argv[2]) : 20.f;
+    f32 scale = 20;
+    std::string out_path = "./";
 
-    s32 width, height, channels;
-    u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);
-    if (!data) {
-        std::println("File not found!");
+    s32 c;
+    while ((c = getopt(argc, argv, "hs:d:")) != -1) {
+        switch (c) {
+        case 's':
+            scale = std::stof(optarg);
+            break;
+        case 'd':
+            out_path = optarg;
+            break;
+        case 'h':
+            std::println("{}", help_string);
+            return 0;
+        }
+    }
+
+    if (out_path.at(out_path.length() - 1) != '/') {
+        out_path += '/';
+    }
+
+    if (!std::filesystem::exists(out_path)) {
+        std::filesystem::create_directory(out_path);
+    }
+
+    std::vector<std::string> files;
+    for (s32 i = optind; i < argc; i++) {
+        files.emplace_back(argv[i]);
+    }
+
+    if (files.empty()) {
+        std::println("No input files specified!");
         exit(EXIT_FAILURE);
     }
 
-    std::string file_as_png = get_file_name_as_png(file_name);
-    u8* normal_map = generate_normal_map(data, width, height, scale);
+    for (const auto& file_name : files) {
+        s32 width, height, channels;
+        u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);
+        if (!data) {
+            std::println("File not found!");
+            exit(EXIT_FAILURE);
+        }
 
-    stbi_write_png(file_as_png.c_str(), width, height, 3, normal_map, width * 3);
+        std::string file_as_png = get_file_name_as_png(file_name);
+        u8* normal_map = generate_normal_map(data, width, height, scale);
 
-    std::println("Successfully created normal map!");
+        std::string full_path = out_path + file_as_png;
+        stbi_write_png(full_path.c_str(), width, height, 3, normal_map, width * 3);
+    }
+
+    std::println("Successfully created normal maps!");
     return 0;
 }

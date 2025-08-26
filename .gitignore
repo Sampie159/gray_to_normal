@@ -1,0 +1,6 @@
+.cache/clangd/index
+compile_commands.json
+stb_image.h
+stb_image_write.h
+gtn
+**/*.png

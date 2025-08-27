@@ -5,6 +5,10 @@
 #include <unistd.h>
 #include <vector>
 #include <filesystem>
+#include <thread>
+#include <mutex>
+#include <functional>
+#include <condition_variable>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -89,13 +93,70 @@ static u8* generate_normal_map(const u8* heightmap, s32 width, s32 height, f32 s
 
 static constexpr const char* help_string = R"(gtn - (G)rayscale (T)o (N)ormal Map.
 
-Usage: gtn <file_name> ... [-s <strength> (default: 20)] [-d <output_dir> (default: ./)]
+Usage: gtn <file_name> ... [options]
 
 Options:
-        -s                  Sets the strength|scale.
-        -d                  Sets the output directory.
+        -s <strength>       Sets the strength|scale.
+        -d <output_dir>     Sets the output directory.
+        -j <jobs>           How many threads you want to use.
         -h                  Displays this help menu.
 )";
+
+using VoidFunc = std::function<void()>;
+
+struct ThreadPool {
+    std::vector<std::thread> threads;
+    std::vector<VoidFunc> tasks;
+    std::mutex mutex;
+    std::condition_variable cv;
+    std::atomic<bool> done = false;
+
+    ThreadPool(u64 thread_count);
+
+    void add(VoidFunc task);
+    void join();
+};
+
+ThreadPool::ThreadPool(u64 thread_count) {
+    for (u64 i = 0; i < thread_count; i++) {
+        threads.emplace_back([this]{
+            while (true) {
+                VoidFunc task;
+                {
+                    std::unique_lock lock{mutex};
+                    cv.wait(lock, [this] {
+                        return done || !tasks.empty();
+                    });
+                    if (done && tasks.empty()) return;
+
+                    task = std::move(tasks.back());
+                    tasks.pop_back();
+                }
+
+                task();
+            }
+        });
+    }
+}
+
+void ThreadPool::add(VoidFunc task) {
+    {
+        std::unique_lock lock{mutex};
+        tasks.emplace_back(std::move(task));
+    }
+
+    cv.notify_one();
+}
+
+void ThreadPool::join() {
+    {
+        std::unique_lock lock{mutex};
+        done = true;
+    }
+
+    cv.notify_all();
+    for (auto& t : threads) t.join();
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -105,15 +166,19 @@ int main(int argc, char* argv[]) {
 
     f32 scale = 20;
     std::string out_path = "./";
+    u32 jobs = 1;
 
     s32 c;
-    while ((c = getopt(argc, argv, "hs:d:")) != -1) {
+    while ((c = getopt(argc, argv, "hs:d:j:")) != -1) {
         switch (c) {
         case 's':
             scale = std::stof(optarg);
             break;
         case 'd':
             out_path = optarg;
+            break;
+        case 'j':
+            jobs = std::stoi(optarg);
             break;
         case 'h':
             std::println("{}", help_string);
@@ -139,21 +204,26 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-#pragma omp parallel for
+    ThreadPool tp{jobs};
+
     for (const auto& file_name : files) {
-        s32 width, height, channels;
-        u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);
-        if (!data) {
-            std::println("File not found!");
-            exit(EXIT_FAILURE);
-        }
+        tp.add([&]{
+           s32 width, height, channels;
+           u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);
+           if (!data) {
+               std::println("File not found!");
+               exit(EXIT_FAILURE);
+           }
 
-        std::string file_as_png = get_file_name_as_png(file_name);
-        u8* normal_map = generate_normal_map(data, width, height, scale);
+           std::string file_as_png = get_file_name_as_png(file_name);
+           u8* normal_map = generate_normal_map(data, width, height, scale);
 
-        std::string full_path = out_path + file_as_png;
-        stbi_write_png(full_path.c_str(), width, height, 3, normal_map, width * 3);
+           std::string full_path = out_path + file_as_png;
+           stbi_write_png(full_path.c_str(), width, height, 3, normal_map, width * 3);
+       });
     }
+
+    tp.join();
 
     std::println("Successfully created normal maps!");
     return 0;

@@ -46,4 +46,4 @@ to remove the executable from your system.
 
 # Dependencies
 
-- OpenMP
+A compiler that has `-std=gnu++26`.

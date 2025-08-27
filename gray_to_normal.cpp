@@ -104,8 +104,9 @@ Usage: gtn <file_name> ... [options]
 Options:
         -s <strength>       Sets the strength|scale.
         -d <output_dir>     Sets the output directory.
-        -j <jobs>           How many threads you want to use.
-        -t                  Enables multithreading. Same as -j but max threads.
+        -j <jobs>           How many threads you want to use. (Mutually Exclusive with -J).
+        -J <output_file>    Join all input files into a single output. (Mutually Exclusive with -j).
+        -t                  Enables multithreading. Same as -j $(nproc).
         -h                  Displays this help menu.
 )";
 
@@ -165,6 +166,82 @@ void ThreadPool::join() {
     for (auto& t : threads) t.join();
 }
 
+static void run_multithreaded(u64 jobs, const std::vector<std::string>& files, const std::string& out_path, f32 scale) {
+    ThreadPool tp{jobs};
+
+    for (const auto& file_name : files) {
+        tp.add([&]{
+           s32 width, height, channels;
+           u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);
+           if (!data) {
+               std::println("File not found!");
+               exit(EXIT_FAILURE);
+           }
+
+           std::string file_as_png = get_file_name_as_png(file_name);
+           u8* normal_map = generate_normal_map(data, width, height, scale);
+
+           std::string full_path = out_path + file_as_png;
+           stbi_write_png(full_path.c_str(), width, height, 3, normal_map, width * 3);
+           stbi_image_free(data);
+           free(normal_map);
+       });
+    }
+
+    tp.join();
+}
+
+static void run_singlethreaded(const std::vector<std::string>& files, const std::string& out_path, f32 scale) {
+    for (const auto& file_name : files) {
+       s32 width, height, channels;
+       u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);
+       if (!data) {
+           std::println("File not found!");
+           exit(EXIT_FAILURE);
+       }
+
+       std::string file_as_png = get_file_name_as_png(file_name);
+       u8* normal_map = generate_normal_map(data, width, height, scale);
+
+       std::string full_path = out_path + file_as_png;
+       stbi_write_png(full_path.c_str(), width, height, 3, normal_map, width * 3);
+       stbi_image_free(data);
+       free(normal_map);
+   }
+}
+
+static void single_output(const std::vector<std::string>& files, const std::string& out_path, f32 scale) {
+    bool first_time = true;
+    u8* real_data = nullptr;
+    s32 width, height, channels;
+
+    for (const auto& file_name : files) {
+       u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);
+       if (!data) {
+           std::println("File not found!");
+           exit(EXIT_FAILURE);
+       }
+
+       u64 size = width * height;
+       if (first_time) {
+           real_data = (u8*)calloc(size, 1);
+           first_time = false;
+       }
+
+       for (u64 i = 0; i < size; i++) {
+           real_data[i] += data[i] / files.size();
+       }
+
+       stbi_image_free(data);
+   }
+
+    u8* normal_map = generate_normal_map(real_data, width, height, scale);
+    stbi_write_png(out_path.c_str(), width, height, 3, normal_map, width * 3);
+
+    free(real_data);
+    free(normal_map);
+}
+
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::println("Please input a filename");
@@ -174,9 +251,11 @@ int main(int argc, char* argv[]) {
     f32 scale = 20;
     std::string out_path = "./";
     u32 jobs = 1;
+    bool join_output = false;
+    std::string single_file_name;
 
     s32 c;
-    while ((c = getopt(argc, argv, "hts:d:j:")) != -1) {
+    while ((c = getopt(argc, argv, "hts:d:j:J:")) != -1) {
         switch (c) {
         case 's':
             scale = std::stof(optarg);
@@ -189,6 +268,10 @@ int main(int argc, char* argv[]) {
             break;
         case 't':
             jobs = std::thread::hardware_concurrency();
+            break;
+        case 'J':
+            join_output = true;
+            single_file_name = optarg;
             break;
         case 'h':
             std::println("{}", help_string);
@@ -216,28 +299,14 @@ int main(int argc, char* argv[]) {
         exit(EXIT_FAILURE);
     }
 
-    ThreadPool tp{jobs};
-
-    for (const auto& file_name : files) {
-        tp.add([&]{
-           s32 width, height, channels;
-           u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);
-           if (!data) {
-               std::println("File not found!");
-               exit(EXIT_FAILURE);
-           }
-
-           std::string file_as_png = get_file_name_as_png(file_name);
-           u8* normal_map = generate_normal_map(data, width, height, scale);
-
-           std::string full_path = out_path + file_as_png;
-           stbi_write_png(full_path.c_str(), width, height, 3, normal_map, width * 3);
-           stbi_image_free(data);
-           free(normal_map);
-       });
+    if (join_output) {
+        out_path += single_file_name;
+        single_output(files, out_path, scale);
+    } else if (jobs > 1) {
+        run_multithreaded(jobs, files, out_path, scale);
+    } else {
+        run_singlethreaded(files, out_path, scale);
     }
-
-    tp.join();
 
     std::println("Successfully created normal maps!");
     return 0;

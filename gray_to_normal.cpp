@@ -99,6 +99,7 @@ Options:
         -s <strength>       Sets the strength|scale.
         -d <output_dir>     Sets the output directory.
         -j <jobs>           How many threads you want to use.
+        -t                  Enables multithreading. Same as -j but max threads.
         -h                  Displays this help menu.
 )";
 
@@ -169,7 +170,7 @@ int main(int argc, char* argv[]) {
     u32 jobs = 1;
 
     s32 c;
-    while ((c = getopt(argc, argv, "hs:d:j:")) != -1) {
+    while ((c = getopt(argc, argv, "hts:d:j:")) != -1) {
         switch (c) {
         case 's':
             scale = std::stof(optarg);
@@ -180,9 +181,14 @@ int main(int argc, char* argv[]) {
         case 'j':
             jobs = std::stoi(optarg);
             break;
+        case 't':
+            jobs = std::thread::hardware_concurrency();
+            break;
         case 'h':
             std::println("{}", help_string);
             return 0;
+        default:
+            exit(EXIT_FAILURE);
         }
     }
 

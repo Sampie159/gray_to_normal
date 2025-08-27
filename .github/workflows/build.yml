@@ -1,0 +1,28 @@
+name: Build CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install latest Clang/LLVM
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget lsb-release software-properties-common
+          wget https://apt.llvm.org/llvm.sh
+          chmod +x llvm.sh
+          sudo ./llvm.sh 20
+          # sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
+          # sudo update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
+          clang --version
+          clang++ --version
+
+      - name: make
+        run: CC=clang CXX=clang++ make

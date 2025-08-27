@@ -232,6 +232,8 @@ int main(int argc, char* argv[]) {
 
            std::string full_path = out_path + file_as_png;
            stbi_write_png(full_path.c_str(), width, height, 3, normal_map, width * 3);
+           stbi_image_free(data);
+           free(normal_map);
        });
     }
 

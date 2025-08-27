@@ -7,8 +7,8 @@
 #include <filesystem>
 #include <thread>
 #include <mutex>
-#include <functional>
 #include <condition_variable>
+#include <functional>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"

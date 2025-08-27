@@ -5,7 +5,7 @@ A grayscale to normal map converter.
 Simply run
 
 ```bash
-gtn <file_name> ... [-s <strength> (default: 20)] [-d <output_dir> (default: ./)]
+gtn <file_name> ...
 ```
 
 You can also run
@@ -16,7 +16,7 @@ gtn -h
 
 for a help menu.
 
-# Building
+# Build From Source
 
 Simply run
 
@@ -46,4 +46,4 @@ to remove the executable from your system.
 
 # Dependencies
 
-A compiler that has `-std=gnu++26`.
+A compiler that supports `-std=gnu++26`.

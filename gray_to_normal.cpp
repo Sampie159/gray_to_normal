@@ -33,12 +33,18 @@ static constexpr u64 MAX_U64 = 0xFFFFFFFFFFFFFFFF;
 
 static std::string get_file_name_as_png(std::string_view file_name) {
     u64 dot_pos = MAX_U64;
+    u64 slash_pos = 0;
 
     for (s32 i = file_name.length() - 1; i >= 0; i--) {
         if (file_name.at(i) == '.') {
             dot_pos = i;
-            break;
         }
+
+        if (file_name.at(i) == '/') {
+            slash_pos = i + 1;
+        }
+
+        if (dot_pos != MAX_U64 && slash_pos != 0) break;
     }
 
     if (dot_pos == MAX_U64) {
@@ -46,7 +52,7 @@ static std::string get_file_name_as_png(std::string_view file_name) {
         exit(EXIT_FAILURE);
     }
 
-    return std::string{file_name, 0, dot_pos} + "_normals.png";
+    return std::string{file_name, slash_pos, dot_pos} + "_normals.png";
 }
 
 static inline f32 h(s32 x, s32 y, s32 width, s32 height, const u8* heightmap) {

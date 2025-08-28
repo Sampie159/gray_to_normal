@@ -1,3 +1,7 @@
+## [v1.1.1] - 2025-08-28
+### Fix
+- Fixed help message to display default values.
+
 ## [v1.1.0] - 2025-08-27
 ### Added
 - -J flag to bundle the input files as one output.

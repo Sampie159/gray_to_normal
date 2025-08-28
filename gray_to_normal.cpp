@@ -29,6 +29,8 @@ using u64 = uint64_t;
 using f32 = float;
 using f64 = double;
 
+using StringVec = std::vector<std::string>;
+
 static constexpr u64 MAX_U64 = 0xFFFFFFFFFFFFFFFF;
 
 static std::string get_file_name_as_png(std::string_view file_name) {
@@ -102,8 +104,8 @@ static constexpr const char* help_string = R"(gtn - (G)rayscale (T)o (N)ormal Ma
 Usage: gtn <file_name> ... [options]
 
 Options:
-        -s <strength>       Sets the strength|scale.
-        -d <output_dir>     Sets the output directory.
+        -s <strength>       Sets the strength|scale. (default: 20)
+        -d <output_dir>     Sets the output directory. (default: ./)
         -j <jobs>           How many threads you want to use. (Mutually Exclusive with -J).
         -J <output_file>    Join all input files into a single output. (Mutually Exclusive with -j).
         -t                  Enables multithreading. Same as -j $(nproc).
@@ -166,7 +168,7 @@ void ThreadPool::join() {
     for (auto& t : threads) t.join();
 }
 
-static void run_multithreaded(u64 jobs, const std::vector<std::string>& files, const std::string& out_path, f32 scale) {
+static void run_multithreaded(u64 jobs, const StringVec& files, const std::string& out_path, f32 scale) {
     ThreadPool tp{jobs};
 
     for (const auto& file_name : files) {
@@ -191,7 +193,7 @@ static void run_multithreaded(u64 jobs, const std::vector<std::string>& files, c
     tp.join();
 }
 
-static void run_singlethreaded(const std::vector<std::string>& files, const std::string& out_path, f32 scale) {
+static void run_singlethreaded(const StringVec& files, const std::string& out_path, f32 scale) {
     for (const auto& file_name : files) {
        s32 width, height, channels;
        u8* data = stbi_load(file_name.c_str(), &width, &height, &channels, 1);
@@ -210,7 +212,7 @@ static void run_singlethreaded(const std::vector<std::string>& files, const std:
    }
 }
 
-static void single_output(const std::vector<std::string>& files, const std::string& out_path, f32 scale) {
+static void single_output(const StringVec& files, const std::string& out_path, f32 scale) {
     bool first_time = true;
     u8* real_data = nullptr;
     s32 width, height, channels;
@@ -289,7 +291,7 @@ int main(int argc, char* argv[]) {
         std::filesystem::create_directory(out_path);
     }
 
-    std::vector<std::string> files;
+    StringVec files;
     for (s32 i = optind; i < argc; i++) {
         files.emplace_back(argv[i]);
     }

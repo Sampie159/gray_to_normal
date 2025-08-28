@@ -30,7 +30,7 @@ jobs:
 
       - name: Build
         run: |
-          CC=clang CXX=clang++ make
+          CC=clang-20 CXX=clang++-20 make
           mkdir -p build_out
           cp ./gtn build_out/
 
@@ -40,6 +40,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
           awk "/## \\[$VERSION\\]/ {flag=1; next} /^## / {flag=0} flag {print}" CHANGELOG.md > RELEASE_BODY.md
+          cat RELEASE_BODY.md
 
       - name: Upload to Github Release
         uses: softprops/action-gh-release@v2

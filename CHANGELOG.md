@@ -1,3 +1,6 @@
+## [v1.1.1] - 2025-08-27
+Just a test :)
+
 ## [v1.1.0] - 2025-08-27
 ### Added
 - -J flag to bundle the input files as one output.

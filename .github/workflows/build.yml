@@ -35,6 +35,7 @@ jobs:
           cp ./gtn build_out/
 
       - name: Extract changelog entry
+        if: startsWith(github.ref, 'refs/tags/v')
         id: changelog
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"

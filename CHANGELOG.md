@@ -1,3 +1,7 @@
+## [v1.1.5] - 2025-08-27
+
+Now pleeeease
+
 ## [v1.1.4] - 2025-08-27
 Ooops forgot the last two
 

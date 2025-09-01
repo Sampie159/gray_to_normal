@@ -1,3 +1,7 @@
+## [v1.1.3] - 2025-09-01
+### Cleanup
+- Cleaned a println that shouldn't have been there.
+
 ## [v1.1.2] - 2025-09-01
 ### Fix
 - Directory creation when the parent directory doesn't exist.

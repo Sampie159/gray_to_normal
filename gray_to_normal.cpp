@@ -305,7 +305,6 @@ int main(int argc, char* argv[]) {
 
     out_path += single_file_name;
     std::string dir_path = find_directory_path(out_path);
-    std::println("RealDirectory: {}", dir_path);
 
     if (!std::filesystem::exists(dir_path)) {
         std::filesystem::create_directories(dir_path);

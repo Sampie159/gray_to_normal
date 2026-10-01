@@ -31,7 +31,7 @@ to build the executable `gtn`.
 You can also run
 
 ```bash
-make install
+sudo make install
 ```
 
 to install the executable on your system.
@@ -39,7 +39,7 @@ to install the executable on your system.
 And also
 
 ```bash
-make uninstall
+sudo make uninstall
 ```
 
 to remove the executable from your system.
@@ -47,3 +47,10 @@ to remove the executable from your system.
 # Dependencies
 
 A compiler that supports `-std=gnu++26`.
+
+# Nix
+
+You can try this program with Nix by simply calling
+```bash
+nix shell github:Sampie159/gray_to_normal
+```

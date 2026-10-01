@@ -6,7 +6,7 @@ CXXSTD ?= -std=gnu++26
 
 all: gtn
 
-gtn: gray_to_normal.cpp
+gtn: gray_to_normal.cpp stb_image.h stb_image_write.h
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(CXXSTD) $< $(LDFLAGS) $(LDLIBS) -o $@
 
 stb_image.h:

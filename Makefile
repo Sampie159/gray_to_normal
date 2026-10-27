@@ -21,4 +21,5 @@ install:
 uninstall:
 	rm -f $(DESTDIR)$(PREFIX)/bin/gtn
 
-clean: rm -f gtn
+clean:
+	rm -f gtn
